@@ -9,14 +9,26 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  Divider,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
-import { Visibility, VisibilityOff, Email, Lock } from '@mui/icons-material';
+import { 
+  Visibility, 
+  VisibilityOff, 
+  Email, 
+  Lock, 
+  Google, 
+  Facebook, 
+  Twitter 
+} from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import useAuthStore from '../../store/authStore';
 
 const LoginForm = ({ onSwitchToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { login, isLoading, error, clearError } = useAuthStore();
   
   const {
@@ -27,11 +39,16 @@ const LoginForm = ({ onSwitchToRegister }) => {
 
   const onSubmit = async (data) => {
     clearError();
-    const result = await login(data.email, data.password);
+    const result = await login(data.email, data.password, rememberMe);
     
     if (result.success) {
       // Login successful - navigation will be handled by App component
     }
+  };
+
+  const handleSocialLogin = (provider) => {
+    // This would connect to social login APIs in a real implementation
+    console.log(`Logging in with ${provider}`);
   };
 
   return (
@@ -46,7 +63,7 @@ const LoginForm = ({ onSwitchToRegister }) => {
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 3,
+          gap: 2.5,
           width: '100%',
           maxWidth: 400,
           mx: 'auto',
@@ -99,6 +116,7 @@ const LoginForm = ({ onSwitchToRegister }) => {
             ),
           }}
           disabled={isLoading}
+          size="medium"
         />
 
         <TextField
@@ -135,6 +153,26 @@ const LoginForm = ({ onSwitchToRegister }) => {
           disabled={isLoading}
         />
 
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                size="small"
+                disabled={isLoading}
+              />
+            }
+            label={<Typography variant="body2">Remember me</Typography>}
+          />        <Link
+          href="/forgot-password"
+          variant="body2"
+          sx={{ textDecoration: 'none' }}
+        >
+          Forgot password?
+        </Link>
+        </Box>
+
         <Button
           type="submit"
           variant="contained"
@@ -143,9 +181,13 @@ const LoginForm = ({ onSwitchToRegister }) => {
           disabled={isLoading}
           sx={{
             py: 1.5,
-            fontSize: '1.1rem',
             fontWeight: 'bold',
             borderRadius: 2,
+            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+            '&:hover': {
+              background: 'linear-gradient(45deg, #5a6fd8, #6a4190)',
+            },
+            mt: 1,
           }}
         >
           {isLoading ? (
@@ -155,7 +197,59 @@ const LoginForm = ({ onSwitchToRegister }) => {
           )}
         </Button>
 
-        <Box textAlign="center">
+        <Box sx={{ display: 'flex', alignItems: 'center', my: 2 }}>
+          <Divider sx={{ flexGrow: 1 }} />
+          <Typography variant="body2" color="text.secondary" sx={{ px: 2 }}>
+            OR CONTINUE WITH
+          </Typography>
+          <Divider sx={{ flexGrow: 1 }} />
+        </Box>
+
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+          <motion.div whileHover={{ y: -3 }} whileTap={{ scale: 0.95 }}>
+            <IconButton
+              onClick={() => handleSocialLogin('Google')}
+              sx={{
+                bgcolor: '#f2f2f2',
+                color: '#DB4437',
+                '&:hover': { bgcolor: '#e8e8e8' },
+                p: 1.5,
+              }}
+            >
+              <Google />
+            </IconButton>
+          </motion.div>
+
+          <motion.div whileHover={{ y: -3 }} whileTap={{ scale: 0.95 }}>
+            <IconButton
+              onClick={() => handleSocialLogin('Facebook')}
+              sx={{
+                bgcolor: '#f2f2f2',
+                color: '#4267B2',
+                '&:hover': { bgcolor: '#e8e8e8' },
+                p: 1.5,
+              }}
+            >
+              <Facebook />
+            </IconButton>
+          </motion.div>
+
+          <motion.div whileHover={{ y: -3 }} whileTap={{ scale: 0.95 }}>
+            <IconButton
+              onClick={() => handleSocialLogin('Twitter')}
+              sx={{
+                bgcolor: '#f2f2f2',
+                color: '#1DA1F2',
+                '&:hover': { bgcolor: '#e8e8e8' },
+                p: 1.5,
+              }}
+            >
+              <Twitter />
+            </IconButton>
+          </motion.div>
+        </Box>
+
+        <Box sx={{ textAlign: 'center', mt: 2 }}>
           <Typography variant="body2" color="text.secondary">
             Don't have an account?{' '}
             <Link

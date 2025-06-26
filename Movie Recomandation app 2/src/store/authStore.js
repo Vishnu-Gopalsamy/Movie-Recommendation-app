@@ -1,63 +1,32 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
-// Mock user data
-const mockUser = {
-  id: 1,
-  email: 'user@example.com',
-  firstName: 'John',
-  lastName: 'Doe',
-  avatar: null
-};
+// API URL
+const API_URL = 'http://localhost:5000/api';
 
-// Mock API call to simulate authentication
-const mockAuthApi = async (endpoint, data, delay = 1000) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      switch (endpoint) {
-        case 'login': {
-          const { email, password } = data;
-          if (email === 'user@example.com' && password === 'password') {
-            resolve({
-              success: true,
-              user: mockUser,
-              token: 'mock-jwt-token'
-            });
-          } else {
-            reject(new Error('Invalid email or password'));
-          }
-          break;
-        }
-          
-        case 'register': {
-          if (Math.random() < 0.9) { // 90% success rate for demo
-            resolve({
-              success: true,
-              user: {
-                id: Date.now(),
-                ...data,
-                avatar: null
-              },
-              token: 'mock-jwt-token'
-            });
-          } else {
-            reject(new Error('Email is already taken'));
-          }
-          break;
-        }
-          
-        case 'logout': {
-          resolve({ success: true });
-          break;
-        }
-          
-        default:
-          reject(new Error('Invalid endpoint'));
-      }
-    }, delay);
-  });
-};
+// Setup axios instance
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add token to requests when available
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('auth-token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 const useAuthStore = create(
   persist(
@@ -73,11 +42,16 @@ const useAuthStore = create(
       login: async (email, password) => {
         try {
           set({ loading: true, error: null });
-          const response = await mockAuthApi('login', { email, password });
+          const response = await api.post('/auth/login', { email, password });
+          
+          const { token, user } = response.data;
+          
+          // Store token in localStorage for axios interceptor
+          localStorage.setItem('auth-token', token);
           
           set({
-            user: response.user,
-            token: response.token,
+            user,
+            token,
             isAuthenticated: true,
             loading: false
           });
@@ -85,22 +59,32 @@ const useAuthStore = create(
           toast.success('Login successful! Welcome back.');
           return { success: true };
         } catch (error) {
+          const errorMessage = 
+            error.response?.data?.error || 
+            error.message || 
+            'Login failed. Please check your credentials.';
+            
           set({ 
             loading: false, 
-            error: error.message || 'Login failed. Please check your credentials.' 
+            error: errorMessage
           });
-          return { success: false, error: error.message };
+          return { success: false, error: errorMessage };
         }
       },
       
       register: async (userData) => {
         try {
           set({ loading: true, error: null });
-          const response = await mockAuthApi('register', userData);
+          const response = await api.post('/auth/register', userData);
+          
+          const { token, user } = response.data;
+          
+          // Store token in localStorage for axios interceptor
+          localStorage.setItem('auth-token', token);
           
           set({
-            user: response.user,
-            token: response.token,
+            user,
+            token,
             isAuthenticated: true,
             loading: false
           });
@@ -108,18 +92,30 @@ const useAuthStore = create(
           toast.success('Registration successful! Welcome to MovieFlix.');
           return { success: true };
         } catch (error) {
+          const errorMessage = 
+            error.response?.data?.error || 
+            error.message || 
+            'Registration failed. Please try again.';
+            
           set({ 
             loading: false, 
-            error: error.message || 'Registration failed. Please try again.' 
+            error: errorMessage
           });
-          return { success: false, error: error.message };
+          return { success: false, error: errorMessage };
         }
       },
       
       logout: async () => {
         try {
           set({ loading: true });
-          await mockAuthApi('logout');
+          
+          // Only attempt API call if we have a token
+          if (get().token) {
+            await api.post('/auth/logout');
+          }
+          
+          // Remove token from localStorage
+          localStorage.removeItem('auth-token');
           
           set({
             user: null,
@@ -131,19 +127,149 @@ const useAuthStore = create(
           toast.info('You have been logged out successfully.');
           return { success: true };
         } catch (error) {
-          set({ loading: false });
+          localStorage.removeItem('auth-token');
+          set({ 
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            loading: false 
+          });
           return { success: true }; // Force logout even if API fails
         }
       },
       
-      updateUser: (userData) => {
-        set(state => ({
-          user: {
-            ...state.user,
-            ...userData
-          }
-        }));
-        return { success: true };
+      updateUser: async (userData) => {
+        try {
+          set({ loading: true, error: null });
+          const response = await api.put('/users/profile', userData);
+          
+          set(state => ({
+            user: {
+              ...state.user,
+              ...response.data.data
+            },
+            loading: false
+          }));
+          
+          toast.success('Profile updated successfully.');
+          return { success: true };
+        } catch (error) {
+          const errorMessage = 
+            error.response?.data?.error || 
+            error.message || 
+            'Failed to update profile.';
+            
+          set({ 
+            loading: false, 
+            error: errorMessage
+          });
+          return { success: false, error: errorMessage };
+        }
+      },
+      
+      updatePassword: async (currentPassword, newPassword) => {
+        try {
+          set({ loading: true, error: null });
+          await api.put('/users/password', { currentPassword, newPassword });
+          
+          set({ loading: false });
+          toast.success('Password updated successfully.');
+          return { success: true };
+        } catch (error) {
+          const errorMessage = 
+            error.response?.data?.error || 
+            error.message || 
+            'Failed to update password.';
+            
+          set({ 
+            loading: false, 
+            error: errorMessage
+          });
+          return { success: false, error: errorMessage };
+        }
+      },
+      
+      updatePreferences: async (preferences) => {
+        try {
+          set({ loading: true, error: null });
+          const response = await api.put('/users/preferences', preferences);
+          
+          set(state => ({
+            user: {
+              ...state.user,
+              preferences: response.data.data
+            },
+            loading: false
+          }));
+          
+          toast.success('Preferences updated successfully.');
+          return { success: true };
+        } catch (error) {
+          const errorMessage = 
+            error.response?.data?.error || 
+            error.message || 
+            'Failed to update preferences.';
+            
+          set({ 
+            loading: false, 
+            error: errorMessage
+          });
+          return { success: false, error: errorMessage };
+        }
+      },
+      
+      updateNotificationSettings: async (settings) => {
+        try {
+          set({ loading: true, error: null });
+          const response = await api.put('/users/notifications', settings);
+          
+          set(state => ({
+            user: {
+              ...state.user,
+              notificationSettings: response.data.data
+            },
+            loading: false
+          }));
+          
+          toast.success('Notification settings updated successfully.');
+          return { success: true };
+        } catch (error) {
+          const errorMessage = 
+            error.response?.data?.error || 
+            error.message || 
+            'Failed to update notification settings.';
+            
+          set({ 
+            loading: false, 
+            error: errorMessage
+          });
+          return { success: false, error: errorMessage };
+        }
+      },
+      
+      // Check if user is authenticated using the token
+      checkAuthStatus: async () => {
+        try {
+          if (!get().token) return { success: false };
+          
+          const response = await api.get('/auth/me');
+          
+          set({
+            user: response.data.data,
+            isAuthenticated: true
+          });
+          
+          return { success: true };
+        } catch (error) {
+          // If token is invalid, clear auth state
+          localStorage.removeItem('auth-token');
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false
+          });
+          return { success: false };
+        }
       },
       
       clearError: () => set({ error: null })

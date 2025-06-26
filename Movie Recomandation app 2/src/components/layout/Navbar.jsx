@@ -1,391 +1,403 @@
 import React, { useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   AppBar,
-  Toolbar,
-  Typography,
-  Button,
   Box,
+  Toolbar,
   IconButton,
+  Typography,
   Menu,
-  MenuItem,
+  Container,
   Avatar,
-  Divider,
-  useTheme,
+  Button,
+  Tooltip,
+  MenuItem,
+  InputBase,
   useMediaQuery,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  TextField,
-  InputAdornment,
+  useTheme,
+  Divider
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   Search as SearchIcon,
-  Home,
-  Movie,
-  Favorite,
-  Person,
+  AccountCircle,
   Logout,
+  Settings,
+  Bookmark,
+  Favorite,
   Login,
   PersonAdd,
-  Bookmark,
+  DarkMode,
+  LightMode
 } from '@mui/icons-material';
-import ThemeToggle from '../common/ThemeToggle';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { styled, alpha } from '@mui/material/styles';
 import useAuthStore from '../../store/authStore';
-import useMovieStore from '../../store/movieStore';
+import useThemeStore from '../../store/themeStore';
+import ThemeToggle from '../theme/ThemeToggle';
+
+// Styled components for search
+const Search = styled('div')(({ theme }) => ({
+  position: 'relative',
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: alpha(theme.palette.common.white, 0.15),
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.common.white, 0.25),
+  },
+  marginRight: theme.spacing(2),
+  marginLeft: 0,
+  width: '100%',
+  [theme.breakpoints.up('sm')]: {
+    marginLeft: theme.spacing(3),
+    width: 'auto',
+  },
+}));
+
+const SearchIconWrapper = styled('div')(({ theme }) => ({
+  padding: theme.spacing(0, 2),
+  height: '100%',
+  position: 'absolute',
+  pointerEvents: 'none',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
+
+const StyledInputBase = styled(InputBase)(({ theme }) => ({
+  color: 'inherit',
+  '& .MuiInputBase-input': {
+    padding: theme.spacing(1, 1, 1, 0),
+    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    transition: theme.transitions.create('width'),
+    width: '100%',
+    [theme.breakpoints.up('md')]: {
+      width: '20ch',
+    },
+  },
+}));
 
 const Navbar = ({ onAuthModalOpen }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  const { user, isAuthenticated, logout } = useAuthStore();
-  const { searchMovies } = useMovieStore();
+  const theme = useTheme();
+  const { isAuthenticated, user, logout } = useAuthStore();
+  const { toggleMode } = useThemeStore();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const handleProfileMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
+  const [anchorElNav, setAnchorElNav] = useState(null);
+  const [anchorElUser, setAnchorElUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Handle navigation menu
+  const handleOpenNavMenu = (event) => {
+    setAnchorElNav(event.currentTarget);
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
+  // Handle user menu
+  const handleOpenUserMenu = (event) => {
+    setAnchorElUser(event.currentTarget);
   };
 
-  const handleLogout = () => {
-    logout();
-    handleMenuClose();
-    navigate('/');
+  const handleMenu = () => {
+    setAnchorElNav(null);
+    setAnchorElUser(null);
   };
 
+  // Handle search submit
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      searchMovies(searchQuery);
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
     }
   };
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  
+  // Handle user logout
+  const handleLogout = async () => {
+    handleMenu();
+    await logout();
+    navigate('/');
   };
 
-  const navigationItems = [
-    { text: 'Home', icon: <Home />, path: '/' },
-    { text: 'Discover', icon: <Movie />, path: '/discover' },
-    { text: 'Favorites', icon: <Favorite />, path: '/favorites' },
-    { text: 'Watchlist', icon: <Bookmark />, path: '/watchlist' },
-  ];
-
-  const drawer = (
-    <Box sx={{ width: 250 }}>
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="h6" color="primary" fontWeight="bold">
-          MovieFlix
-        </Typography>
-      </Box>
-      <Divider />
-      <List>
-        {navigationItems.map((item) => (
-          <ListItem
-            key={item.text}
-            component={Link}
-            to={item.path}
-            onClick={() => setMobileOpen(false)}
+  return (
+    <AppBar 
+      position="fixed" 
+      sx={{ 
+        zIndex: theme => theme.zIndex.drawer + 1,
+        boxShadow: 1,
+        backdropFilter: 'blur(10px)',
+        backgroundColor: alpha(theme.palette.background.default, 0.8)
+      }}
+    >
+      <Container maxWidth="xl">
+        <Toolbar disableGutters>
+          {/* Logo for desktop */}
+          <Typography
+            variant="h6"
+            noWrap
+            component={RouterLink}
+            to="/"
             sx={{
-              color: 'inherit',
+              mr: 2,
+              display: { xs: 'none', md: 'flex' },
+              fontWeight: 700,
+              color: 'text.primary',
               textDecoration: 'none',
-              backgroundColor: location.pathname === item.path ? 'action.selected' : 'transparent',
-              '&:hover': {
-                backgroundColor: 'action.hover',
-              },
+              background: 'linear-gradient(45deg, #667eea, #764ba2)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
             }}
           >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
-        ))}
-      </List>
-      
-      {!isAuthenticated && (
-        <>
-          <Divider sx={{ my: 2 }} />
-          <List>
-            <ListItem
-              button
-              onClick={() => {
-                onAuthModalOpen('login');
-                setMobileOpen(false);
-              }}
-            >
-              <ListItemIcon><Login /></ListItemIcon>
-              <ListItemText primary="Sign In" />
-            </ListItem>
-            <ListItem
-              button
-              onClick={() => {
-                onAuthModalOpen('register');
-                setMobileOpen(false);
-              }}
-            >
-              <ListItemIcon><PersonAdd /></ListItemIcon>
-              <ListItemText primary="Sign Up" />
-            </ListItem>
-          </List>
-        </>
-      )}
-    </Box>
-  );
+            MovieFlix
+          </Typography>
 
-  return (
-    <>
-      <AppBar
-        position="fixed"
-        sx={{
-          background: 'linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <Toolbar>
-          {isMobile && (
+          {/* Mobile menu icon */}
+          <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
             <IconButton
+              size="large"
+              aria-label="menu"
+              aria-controls="menu-appbar"
+              aria-haspopup="true"
+              onClick={handleOpenNavMenu}
               color="inherit"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
             >
               <MenuIcon />
             </IconButton>
-          )}
-
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Typography
-              variant="h6"
-              component={Link}
-              to="/"
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorElNav}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'left',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'left',
+              }}
+              open={Boolean(anchorElNav)}
+              onClose={handleMenu}
               sx={{
-                textDecoration: 'none',
-                color: 'inherit',
-                fontWeight: 'bold',
-                fontSize: '1.5rem',
-                background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                display: { xs: 'block', md: 'none' },
               }}
             >
-              MovieFlix
-            </Typography>
-          </motion.div>
-
-          {!isMobile && (
-            <Box sx={{ display: 'flex', ml: 4, gap: 2 }}>
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.text}
-                  component={Link}
-                  to={item.path}
-                  color="inherit"
-                  startIcon={item.icon}
-                  sx={{
-                    borderRadius: 2,
-                    px: 2,
-                    backgroundColor: location.pathname === item.path ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    },
-                  }}
-                >
-                  {item.text}
-                </Button>
-              ))}
-            </Box>
-          )}
-
-          <Box sx={{ flexGrow: 1 }} />
-
-          {/* Theme Toggle */}
-          <ThemeToggle />
-
-          {/* Search Bar */}
-          <Box
-            component="form"
-            onSubmit={handleSearch}
+              <MenuItem component={RouterLink} to="/" onClick={handleMenu}>
+                Home
+              </MenuItem>
+              <MenuItem component={RouterLink} to="/discover" onClick={handleMenu}>
+                Discover
+              </MenuItem>
+              {isAuthenticated && (
+                <>
+                  <MenuItem component={RouterLink} to="/favorites" onClick={handleMenu}>
+                    Favorites
+                  </MenuItem>
+                  <MenuItem component={RouterLink} to="/watchlist" onClick={handleMenu}>
+                    Watchlist
+                  </MenuItem>
+                </>
+              )}
+            </Menu>
+          </Box>
+          
+          {/* Logo for mobile */}
+          <Typography
+            variant="h6"
+            noWrap
+            component={RouterLink}
+            to="/"
             sx={{
-              display: 'flex',
-              alignItems: 'center',
               mr: 2,
-              maxWidth: isMobile ? 200 : 400,
-              width: '100%',
+              display: { xs: 'flex', md: 'none' },
+              flexGrow: 1,
+              fontWeight: 700,
+              color: 'text.primary',
+              textDecoration: 'none',
+              background: 'linear-gradient(45deg, #667eea, #764ba2)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
             }}
           >
-            <TextField
-              size="small"
-              placeholder="Search movies..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-                sx: {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: 2,
-                  color: 'white',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    border: 'none',
-                  },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    border: 'none',
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                  },
-                },
-              }}
-              sx={{ flexGrow: 1 }}
-            />
+            MovieFlix
+          </Typography>
+          
+          {/* Desktop navigation links */}
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+            <Button
+              component={RouterLink}
+              to="/"
+              onClick={handleMenu}
+              sx={{ my: 2, color: 'text.primary', display: 'block' }}
+            >
+              Home
+            </Button>
+            <Button
+              component={RouterLink}
+              to="/discover"
+              onClick={handleMenu}
+              sx={{ my: 2, color: 'text.primary', display: 'block' }}
+            >
+              Discover
+            </Button>
+            {isAuthenticated && (
+              <>
+                <Button
+                  component={RouterLink}
+                  to="/favorites"
+                  onClick={handleMenu}
+                  sx={{ my: 2, color: 'text.primary', display: 'block' }}
+                >
+                  Favorites
+                </Button>
+                <Button
+                  component={RouterLink}
+                  to="/watchlist"
+                  onClick={handleMenu}
+                  sx={{ my: 2, color: 'text.primary', display: 'block' }}
+                >
+                  Watchlist
+                </Button>
+              </>
+            )}
           </Box>
 
-          {/* Auth Section */}
-          {isAuthenticated ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <IconButton
-                onClick={handleProfileMenuOpen}
-                sx={{
-                  p: 0,
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  '&:hover': {
-                    borderColor: 'rgba(255, 255, 255, 0.5)',
-                  },
-                }}
-              >
-                <Avatar
-                  src={user?.avatar}
-                  alt={user?.name}
-                  sx={{ width: 40, height: 40 }}
-                >
-                  {user?.name?.charAt(0).toUpperCase()}
-                </Avatar>
-              </IconButton>
-              
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  sx: {
-                    mt: 1,
-                    borderRadius: 2,
-                    minWidth: 200,
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-                  },
-                }}
-              >
-                <MenuItem
-                  component={Link}
-                  to="/profile"
-                  onClick={handleMenuClose}
-                  sx={{ py: 1.5 }}
-                >
-                  <Person sx={{ mr: 2 }} />
-                  Profile
-                </MenuItem>
-                <MenuItem
-                  component={Link}
-                  to="/favorites"
-                  onClick={handleMenuClose}
-                  sx={{ py: 1.5 }}
-                >
-                  <Favorite sx={{ mr: 2 }} />
-                  Favorites
-                </MenuItem>
-                <MenuItem
-                  component={Link}
-                  to="/watchlist"
-                  onClick={handleMenuClose}
-                  sx={{ py: 1.5 }}
-                >
-                  <Bookmark sx={{ mr: 2 }} />
-                  Watchlist
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: 'error.main' }}>
-                  <Logout sx={{ mr: 2 }} />
-                  Logout
-                </MenuItem>
-              </Menu>
-            </Box>
-          ) : (
-            !isMobile && (
-              <Box sx={{ display: 'flex', gap: 1 }}>
+          {/* Search bar */}
+          <Box component="form" onSubmit={handleSearch} sx={{ flexGrow: { xs: 0, sm: 1 }, mr: 1 }}>
+            <Search>
+              <SearchIconWrapper>
+                <SearchIcon />
+              </SearchIconWrapper>
+              <StyledInputBase
+                placeholder="Search…"
+                inputProps={{ 'aria-label': 'search' }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </Search>
+          </Box>
+          
+          {/* Theme toggle */}
+          <ThemeToggle />
+
+          {/* Auth/User section */}
+          <Box sx={{ flexGrow: 0, ml: 1 }}>
+            {!isAuthenticated ? (
+              <>
                 <Button
-                  color="inherit"
-                  onClick={() => onAuthModalOpen('login')}
-                  sx={{
-                    borderRadius: 2,
-                    px: 3,
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    },
-                  }}
+                  variant="text"
+                  startIcon={<Login />}
+                  component={RouterLink}
+                  to="/login"
+                  sx={{ mr: 1, display: { xs: 'none', sm: 'inline-flex' } }}
                 >
-                  Sign In
+                  Log in
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={() => onAuthModalOpen('register')}
-                  sx={{
-                    borderRadius: 2,
-                    px: 3,
-                    background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
-                    '&:hover': {
-                      background: 'linear-gradient(45deg, #ff5252, #26a69a)',
-                    },
-                  }}
+                  startIcon={<PersonAdd />}
+                  component={RouterLink}
+                  to="/register"
+                  sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
                 >
-                  Sign Up
+                  Sign up
                 </Button>
-              </Box>
-            )
-          )}
+                <IconButton 
+                  color="inherit" 
+                  sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+                  component={RouterLink}
+                  to="/login"
+                >
+                  <Login />
+                </IconButton>
+              </>
+            ) : (
+              <Tooltip title="Open settings">
+                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                  {user?.avatar ? (
+                    <Avatar alt={user.firstName} src={user.avatar} />
+                  ) : (
+                    <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
+                      {user?.firstName?.charAt(0) || 'U'}
+                    </Avatar>
+                  )}
+                </IconButton>
+              </Tooltip>
+            )}
+            <Menu
+              sx={{ mt: '45px' }}
+              id="menu-appbar"
+              anchorEl={anchorElUser}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={Boolean(anchorElUser)}
+              onClose={handleMenu}
+            >
+              {isAuthenticated && (
+                <Box>
+                  <Box sx={{ px: 3, py: 1, textAlign: 'center' }}>
+                    <Typography variant="subtitle1">
+                      {user?.firstName} {user?.lastName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {user?.email}
+                    </Typography>
+                  </Box>
+                  <Divider />
+                  <MenuItem component={RouterLink} to="/profile" onClick={handleMenu}>
+                    <Avatar
+                      sx={{ width: 24, height: 24, mr: 1, bgcolor: theme.palette.primary.main }}
+                    >
+                      <AccountCircle fontSize="small" />
+                    </Avatar>
+                    Profile
+                  </MenuItem>
+                  <MenuItem component={RouterLink} to="/favorites" onClick={handleMenu}>
+                    <Avatar
+                      sx={{ width: 24, height: 24, mr: 1, bgcolor: theme.palette.primary.main }}
+                    >
+                      <Favorite fontSize="small" />
+                    </Avatar>
+                    Favorites
+                  </MenuItem>
+                  <MenuItem component={RouterLink} to="/watchlist" onClick={handleMenu}>
+                    <Avatar
+                      sx={{ width: 24, height: 24, mr: 1, bgcolor: theme.palette.primary.main }}
+                    >
+                      <Bookmark fontSize="small" />
+                    </Avatar>
+                    Watchlist
+                  </MenuItem>
+                  <MenuItem component={RouterLink} to="/settings" onClick={handleMenu}>
+                    <Avatar
+                      sx={{ width: 24, height: 24, mr: 1, bgcolor: theme.palette.primary.main }}
+                    >
+                      <Settings fontSize="small" />
+                    </Avatar>
+                    Settings
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleLogout}>
+                    <Avatar
+                      sx={{ width: 24, height: 24, mr: 1, bgcolor: theme.palette.error.main }}
+                    >
+                      <Logout fontSize="small" />
+                    </Avatar>
+                    Logout
+                  </MenuItem>
+                </Box>
+              )}
+            </Menu>
+          </Box>
         </Toolbar>
-      </AppBar>
-
-      {/* Mobile Drawer */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true,
-        }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: 250,
-          },
-        }}
-      >
-        {drawer}
-      </Drawer>
-    </>
+      </Container>
+    </AppBar>
   );
 };
 

@@ -2,24 +2,35 @@ import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
-  Box,
   IconButton,
-  useTheme,
+  Box,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
 import { motion, AnimatePresence } from 'framer-motion';
-import LoginForm from './LoginForm';
-import RegisterForm from './RegisterForm';
+import useAuthStore from '../../store/authStore';
+import AuthForm from './AuthForm';
 
 const AuthModal = ({ open, onClose, initialMode = 'login' }) => {
   const [mode, setMode] = useState(initialMode);
+  const { isAuthenticated } = useAuthStore();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleSwitchMode = () => {
+  const handleToggleMode = () => {
     setMode(mode === 'login' ? 'register' : 'login');
   };
+
+  const handleSuccess = () => {
+    onClose();
+  };
+
+  // Close modal if user is authenticated
+  if (isAuthenticated && open) {
+    onClose();
+    return null;
+  }
 
   return (
     <Dialog
@@ -27,69 +38,51 @@ const AuthModal = ({ open, onClose, initialMode = 'login' }) => {
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      fullScreen={isMobile}
+      fullScreen={fullScreen}
       PaperProps={{
+        elevation: 8,
         sx: {
-          borderRadius: isMobile ? 0 : 3,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          position: 'relative',
+          borderRadius: { xs: 0, sm: 2 },
           overflow: 'hidden',
         },
       }}
     >
-      <IconButton
-        onClick={onClose}
+      <Box
         sx={{
           position: 'absolute',
-          top: 16,
-          right: 16,
-          color: 'white',
+          top: 8,
+          right: 8,
           zIndex: 1,
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-          },
         }}
       >
-        <Close />
-      </IconButton>
+        <IconButton onClick={onClose} aria-label="close">
+          <CloseIcon />
+        </IconButton>
+      </Box>
 
       <DialogContent
         sx={{
-          p: 4,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: isMobile ? '100vh' : 600,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(10px)',
+          p: { xs: 2, sm: 4 },
+          background: theme.palette.mode === 'dark' 
+            ? 'linear-gradient(145deg, #1a1a1a, #2a2a2a)'
+            : 'linear-gradient(145deg, #f8fafc, #ffffff)',
         }}
       >
-        <Box sx={{ width: '100%', maxWidth: 500 }}>
-          <AnimatePresence mode="wait">
-            {mode === 'login' ? (
-              <motion.div
-                key="login"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <LoginForm onSwitchToRegister={handleSwitchMode} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="register"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <RegisterForm onSwitchToLogin={handleSwitchMode} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Box>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={mode}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <AuthForm
+              mode={mode}
+              onToggleMode={handleToggleMode}
+              onSuccess={handleSuccess}
+            />
+          </motion.div>
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );

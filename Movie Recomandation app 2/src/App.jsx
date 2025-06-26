@@ -20,6 +20,7 @@ import SearchPage from './pages/SearchPage';
 import MovieDetails from './pages/MovieDetails';
 import Profile from './pages/Profile';
 import NotFoundPage from './pages/NotFoundPage';
+import AuthPage from './pages/AuthPage';
 
 // Store
 import useAuthStore from './store/authStore';
@@ -54,75 +55,13 @@ const App = () => {
         secondary: mode === 'light' ? '#4a5568' : '#a0aec0',
       },
     },
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontWeight: 700,
+    shape: {
+      borderRadius: 12,
     },
-    h2: {
-      fontWeight: 700,
-    },
-    h3: {
-      fontWeight: 700,
-    },
-    h4: {
-      fontWeight: 600,
-    },
-    h5: {
-      fontWeight: 600,
-    },
-    h6: {
-      fontWeight: 600,
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          textTransform: 'none',
-          fontWeight: 600,
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          },
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 16,
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-          '&:hover': {
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-          },
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: 16,
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 12,
-          },
-        },
-      },
-    },
-  },
-  shape: {
-    borderRadius: 12,
-  },
-}), [mode, primaryColor, secondaryColor]);
+  }), [mode, primaryColor, secondaryColor]);
 
-  const handleAuthModalOpen = (mode = 'login') => {
+  // Auth modal handlers
+  const handleAuthModalOpen = (mode) => {
     setAuthModalMode(mode);
     setAuthModalOpen(true);
   };
@@ -131,19 +70,35 @@ const App = () => {
     setAuthModalOpen(false);
   };
 
-  // Close auth modal when user becomes authenticated
+  // Check authentication status when app loads
   useEffect(() => {
-    if (isAuthenticated) {
-      setAuthModalOpen(false);
-    }
-  }, [isAuthenticated]);
+    const checkAuth = async () => {
+      const { checkAuthStatus } = useAuthStore.getState();
+      await checkAuthStatus();
+    };
+    
+    checkAuth();
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '100vh',
+          }}
+        >
+          <ToastContainer position="top-right" autoClose={4000} />
           <Navbar onAuthModalOpen={handleAuthModalOpen} />
+          
+          <AuthModal
+            open={authModalOpen}
+            onClose={handleAuthModalClose}
+            initialMode={authModalMode}
+          />
           
           <Box component="main" sx={{ flexGrow: 1 }}>
             <Routes>
@@ -154,6 +109,11 @@ const App = () => {
               <Route path="/discover" element={<DiscoverPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/movie/:id" element={<MovieDetails />} />
+              
+              {/* Auth Routes */}
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/login" element={<AuthPage />} />
+              <Route path="/register" element={<AuthPage initialMode="register" />} />
               
               {/* Protected Routes */}
               <Route 
@@ -187,31 +147,10 @@ const App = () => {
           </Box>
           
           <Footer />
-
-          {/* Auth Modal */}
-          <AuthModal
-            open={authModalOpen}
-            onClose={handleAuthModalClose}
-            initialMode={authModalMode}
-          />
-
-          {/* Toast Notifications */}
-          <ToastContainer
-            position="bottom-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="light"
-          />
         </Box>
       </Router>
     </ThemeProvider>
   );
-}
+};
 
 export default App;

@@ -1,317 +1,315 @@
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box,
   Container,
   Typography,
   Button,
   Grid,
-  Card,
-  CardContent,
+  Paper,
   useTheme,
-  useMediaQuery,
+  alpha
 } from '@mui/material';
-import { 
-  Movie, 
-  Star, 
-  TrendingUp, 
-  Favorite,
-  PlayArrow,
-} from '@mui/icons-material';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import useMovieStore from '../store/movieStore';
+import { 
+  Explore as ExploreIcon, 
+  Login as LoginIcon, 
+  PersonAdd as PersonAddIcon,
+  Favorite as FavoriteIcon
+} from '@mui/icons-material';
+import MovieCard from '../components/movie/MovieCard';
+import FeaturedMovie from '../components/movie/FeaturedMovie';
+import MovieCarousel from '../components/movie/MovieCarousel';
 import useAuthStore from '../store/authStore';
-import MovieGrid from '../components/movies/MovieGrid';
+import useMovieStore from '../store/movieStore';
 
 const HomePage = ({ onAuthModalOpen }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
-  const { movies, loading, fetchPopularMovies, initializeFromStorage } = useMovieStore();
   const { isAuthenticated } = useAuthStore();
-
+  const { movies, favorites, loading, fetchPopularMovies } = useMovieStore();
+  
+  // Fetch movies when component mounts
   useEffect(() => {
-    initializeFromStorage();
-    fetchPopularMovies();
-  }, []);
+    if (movies.length === 0 && !loading) {
+      fetchPopularMovies();
+    }
+  }, [movies.length, loading, fetchPopularMovies]);
 
-  const features = [
-    {
-      icon: <Movie sx={{ fontSize: 40 }} />,
-      title: 'Discover Movies',
-      description: 'Explore thousands of movies from different genres and eras',
-    },
-    {
-      icon: <Star sx={{ fontSize: 40 }} />,
-      title: 'Personalized Recommendations',
-      description: 'Get movie suggestions tailored to your taste and preferences',
-    },
-    {
-      icon: <TrendingUp sx={{ fontSize: 40 }} />,
-      title: 'Trending Content',
-      description: 'Stay updated with the latest and most popular movies',
-    },
-    {
-      icon: <Favorite sx={{ fontSize: 40 }} />,
-      title: 'Create Your Lists',
-      description: 'Build your personal collection of favorites and watchlist',
-    },
-  ];
-
+  // Featured movie is the first popular movie or a random one
+  const featuredMovie = movies[0] || null;
+  
+  // Get 4 popular movies for the hero section
+  const popularMovies = movies.slice(0, 4);
+  
   return (
-    <Box sx={{ pt: 8 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        paddingTop: { xs: '64px', sm: '70px' },
+        background: theme.palette.mode === 'dark' ? 
+          'linear-gradient(180deg, #111 0%, #0a0a0a 100%)' : 
+          'linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%)',
+      }}
+    >
       {/* Hero Section */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          py: { xs: 8, md: 12 },
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <Container maxWidth="lg">
-          <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={6}>
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-              >
-                <Typography
-                  variant={isMobile ? 'h3' : 'h2'}
-                  component="h1"
-                  gutterBottom
-                  sx={{ fontWeight: 'bold', mb: 3 }}
+      {featuredMovie && (
+        <Box
+          sx={{
+            position: 'relative',
+            height: { xs: '70vh', md: '80vh' },
+            display: 'flex',
+            alignItems: 'center',
+            backgroundImage: `url(https://image.tmdb.org/t/p/original${featuredMovie.backdrop_path})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: `linear-gradient(0deg, 
+                ${alpha(theme.palette.background.default, 1)} 0%, 
+                ${alpha(theme.palette.background.default, 0.9)} 10%,
+                ${alpha(theme.palette.background.default, 0.6)} 30%,
+                ${alpha(theme.palette.background.default, 0.3)} 60%,
+                ${alpha(theme.palette.background.default, 0)} 100%)`,
+              zIndex: 1,
+            },
+          }}
+        >
+          <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
+            <Grid container spacing={3} alignItems="center">
+              <Grid item xs={12} md={6}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  Discover Your Next
-                  <br />
-                  <span style={{ 
-                    background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}>
-                    Favorite Movie
-                  </span>
-                </Typography>
-                
-                <Typography
-                  variant="h6"
-                  sx={{ mb: 4, opacity: 0.9, lineHeight: 1.6 }}
-                >
-                  Explore thousands of movies, get personalized recommendations,
-                  and build your perfect watchlist. Your cinematic journey starts here.
-                </Typography>
-                
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                  {isAuthenticated ? (
+                  <Typography
+                    variant="h2"
+                    component="h1"
+                    fontWeight="bold"
+                    sx={{
+                      mb: 2,
+                      background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    Discover Amazing Movies
+                  </Typography>
+                  <Typography variant="h5" sx={{ mb: 4, color: 'text.primary' }}>
+                    Explore the world of cinema, create watchlists, and get personalized recommendations
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     <Button
-                      component={Link}
-                      to="/discover"
                       variant="contained"
                       size="large"
-                      startIcon={<PlayArrow />}
+                      component={Link}
+                      to="/discover"
+                      startIcon={<ExploreIcon />}
                       sx={{
+                        borderRadius: 30,
                         py: 1.5,
-                        px: 4,
-                        fontSize: '1.1rem',
-                        borderRadius: 3,
-                        background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
+                        px: 3,
+                        background: 'linear-gradient(45deg, #667eea, #764ba2)',
                         '&:hover': {
-                          background: 'linear-gradient(45deg, #ff5252, #26a69a)',
-                          transform: 'translateY(-2px)',
+                          background: 'linear-gradient(45deg, #5a71d6, #6941a3)',
                         },
                       }}
                     >
-                      Start Exploring
+                      Explore Movies
                     </Button>
-                  ) : (
-                    <>
+                    
+                    {!isAuthenticated && (
                       <Button
-                        onClick={() => onAuthModalOpen('register')}
-                        variant="contained"
-                        size="large"
-                        startIcon={<PlayArrow />}
-                        sx={{
-                          py: 1.5,
-                          px: 4,
-                          fontSize: '1.1rem',
-                          borderRadius: 3,
-                          background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
-                          '&:hover': {
-                            background: 'linear-gradient(45deg, #ff5252, #26a69a)',
-                            transform: 'translateY(-2px)',
-                          },
-                        }}
-                      >
-                        Get Started
-                      </Button>
-                      
-                      <Button
-                        onClick={() => onAuthModalOpen('login')}
                         variant="outlined"
                         size="large"
+                        component={Link}
+                        to="/register"
+                        startIcon={<PersonAddIcon />}
                         sx={{
+                          borderRadius: 30,
                           py: 1.5,
-                          px: 4,
-                          fontSize: '1.1rem',
-                          borderRadius: 3,
-                          borderColor: 'rgba(255, 255, 255, 0.5)',
-                          color: 'white',
+                          px: 3,
+                          borderColor: 'primary.main',
+                          borderWidth: 2,
                           '&:hover': {
-                            borderColor: 'white',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 2,
                           },
                         }}
                       >
-                        Sign In
+                        Join Now
                       </Button>
-                    </>
-                  )}
-                </Box>
-              </motion.div>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-              >
-                <Box
-                  sx={{
-                    position: 'relative',
-                    textAlign: 'center',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '120%',
-                      height: '120%',
-                      background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-                      borderRadius: '50%',
-                    },
-                  }}
+                    )}
+                  </Box>
+                </motion.div>
+              </Grid>
+              <Grid item xs={12} md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  <img
-                    src="https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&dpr=1"
-                    alt="Movie Collection"
-                    style={{
-                      width: '100%',
-                      maxWidth: 400,
-                      height: 'auto',
-                      borderRadius: 20,
-                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: 2,
                     }}
-                  />
-                </Box>
-              </motion.div>
+                  >
+                    {popularMovies.map((movie) => (
+                      <Paper
+                        key={movie.id}
+                        elevation={4}
+                        sx={{
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                          transition: 'transform 0.3s',
+                          '&:hover': {
+                            transform: 'scale(1.05)',
+                          },
+                        }}
+                      >
+                        <Box
+                          component={Link}
+                          to={`/movie/${movie.id}`}
+                          sx={{
+                            display: 'block',
+                            height: 180,
+                            background: `url(https://image.tmdb.org/t/p/w500${movie.poster_path})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            textDecoration: 'none',
+                          }}
+                        />
+                      </Paper>
+                    ))}
+                  </Box>
+                </motion.div>
+              </Grid>
             </Grid>
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* Features Section */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <Typography
-            variant="h3"
-            component="h2"
-            textAlign="center"
-            gutterBottom
-            sx={{
-              fontWeight: 'bold',
-              mb: 6,
-              background: 'linear-gradient(45deg, #667eea, #764ba2)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Why Choose MovieFlix?
-          </Typography>
-        </motion.div>
-
-        <Grid container spacing={4}>
-          {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ y: -10 }}
-              >
-                <Card
-                  sx={{
-                    height: '100%',
-                    textAlign: 'center',
-                    p: 3,
-                    borderRadius: 3,
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
-                    },
-                  }}
-                >
-                  <CardContent>
-                    <Box
-                      sx={{
-                        color: 'primary.main',
-                        mb: 2,
-                        display: 'flex',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {feature.icon}
-                    </Box>
-                    <Typography variant="h6" gutterBottom fontWeight="bold">
-                      {feature.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {feature.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-
-      {/* Popular Movies Section */}
-      <Container maxWidth="lg" sx={{ pb: 8 }}>
-        <MovieGrid
-          movies={movies.slice(0, 8)}
-          loading={loading}
-          title="Popular Movies"
-        />
-        
-        <Box sx={{ textAlign: 'center', mt: 4 }}>
-          <Button
-            component={Link}
-            to="/discover"
-            variant="contained"
-            size="large"
-            sx={{
-              py: 1.5,
-              px: 4,
-              borderRadius: 3,
-              background: 'linear-gradient(45deg, #667eea, #764ba2)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #5a6fd8, #6a4190)',
-              },
-            }}
-          >
-            Explore More Movies
-          </Button>
+          </Container>
         </Box>
+      )}
+
+      <Container maxWidth="lg" sx={{ py: 6 }}>
+        {/* Featured Section */}
+        <Typography
+          variant="h4"
+          component="h2"
+          fontWeight="bold"
+          sx={{ mb: 4, textAlign: 'center' }}
+        >
+          Featured Movies
+        </Typography>
+        
+        {!loading && featuredMovie && (
+          <FeaturedMovie movie={featuredMovie} />
+        )}
+        
+        {/* Popular Movies */}
+        <Box sx={{ mt: 8 }}>
+          <Typography
+            variant="h4"
+            component="h2"
+            fontWeight="bold"
+            sx={{ mb: 3 }}
+          >
+            Popular Movies
+          </Typography>
+          <MovieCarousel movies={movies} />
+        </Box>
+        
+        {/* Favorites Section - Only for authenticated users */}
+        {isAuthenticated && favorites.length > 0 && (
+          <Box sx={{ mt: 8 }}>
+            <Typography
+              variant="h4"
+              component="h2"
+              fontWeight="bold"
+              sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}
+            >
+              <FavoriteIcon color="error" />
+              Your Favorites
+            </Typography>
+            <MovieCarousel movies={favorites} />
+            <Box sx={{ mt: 2, textAlign: 'right' }}>
+              <Button 
+                variant="outlined" 
+                component={Link} 
+                to="/favorites"
+                endIcon={<ExploreIcon />}
+              >
+                View All Favorites
+              </Button>
+            </Box>
+          </Box>
+        )}
+        
+        {/* CTA Section for non-authenticated users */}
+        {!isAuthenticated && (
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              mt: 8, 
+              p: 4, 
+              borderRadius: 4, 
+              background: theme.palette.mode === 'dark' 
+                ? 'linear-gradient(45deg, #1a1a1a, #2a2a2a)' 
+                : 'linear-gradient(45deg, #EDF2F7, #FFFFFF)',
+            }}
+          >
+            <Grid container spacing={3} alignItems="center">
+              <Grid item xs={12} md={7}>
+                <Typography variant="h4" component="h3" fontWeight="bold" gutterBottom>
+                  Create Your Movie Experience
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  Join MovieFlix to keep track of your favorite movies, create watchlists,
+                  and get personalized recommendations based on your taste.
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+                  <Button 
+                    variant="contained" 
+                    size="large"
+                    startIcon={<LoginIcon />}
+                    component={Link}
+                    to="/login"
+                  >
+                    Sign In
+                  </Button>
+                  <Button 
+                    variant="outlined" 
+                    size="large"
+                    startIcon={<PersonAddIcon />}
+                    component={Link}
+                    to="/register"
+                  >
+                    Register
+                  </Button>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+                <Box 
+                  component="img"
+                  src="https://images.unsplash.com/photo-1594909122845-11baa439b7bf?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80"
+                  alt="Movie watching"
+                  sx={{ 
+                    width: '100%',
+                    height: 300,
+                    objectFit: 'cover',
+                    borderRadius: 3,
+                    boxShadow: 3
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Paper>
+        )}
       </Container>
     </Box>
   );
