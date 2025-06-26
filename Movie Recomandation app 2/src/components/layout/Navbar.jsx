@@ -33,7 +33,7 @@ import {
 import { styled, alpha } from '@mui/material/styles';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
-import ThemeToggle from '../theme/ThemeToggle';
+import ThemeToggle from '../common/ThemeToggle';
 
 // Styled components for search
 const Search = styled('div')(({ theme }) => ({

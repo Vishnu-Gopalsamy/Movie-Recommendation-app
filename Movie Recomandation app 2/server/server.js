@@ -21,11 +21,23 @@ app.use(cors({
 }));
 
 // Connect to MongoDB
+const mongoOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 30000, // 30 seconds
+  socketTimeoutMS: 45000, // 45 seconds
+  family: 4, // Use IPv4, skip trying IPv6
+  retryWrites: true,
+  w: 'majority'
+};
+
 mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/movieflix')
+  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/movieflix', mongoOptions)
   .then(() => console.log('MongoDB connected successfully'))
   .catch(err => {
     console.error('MongoDB connection error:', err);
+    console.error('Make sure your IP address is whitelisted in MongoDB Atlas');
+    console.error('Check your network connection and DNS settings');
     process.exit(1);
   });
 

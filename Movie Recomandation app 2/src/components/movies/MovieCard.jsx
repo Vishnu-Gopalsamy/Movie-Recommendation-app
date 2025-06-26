@@ -22,6 +22,29 @@ import { motion } from 'framer-motion';
 import useMovieStore from '../../store/movieStore';
 import useAuthStore from '../../store/authStore';
 
+// Genre mapping for display in UI
+const genreMap = {
+  28: "Action",
+  12: "Adventure",
+  16: "Animation",
+  35: "Comedy",
+  80: "Crime",
+  99: "Documentary",
+  18: "Drama",
+  10751: "Family",
+  14: "Fantasy",
+  36: "History",
+  27: "Horror",
+  10402: "Music",
+  9648: "Mystery",
+  10749: "Romance",
+  878: "Science Fiction",
+  10770: "TV Movie",
+  53: "Thriller",
+  10752: "War",
+  37: "Western"
+};
+
 const MovieCard = ({ movie, index = 0 }) => {
   const { favorites, watchlist, toggleFavorite, toggleWatchlist } = useMovieStore();
   const { isAuthenticated } = useAuthStore();
@@ -48,6 +71,10 @@ const MovieCard = ({ movie, index = 0 }) => {
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown';
     return new Date(dateString).getFullYear();
+  };
+
+  const getGenreName = (genreId) => {
+    return genreMap[genreId] || `Genre ${genreId}`;
   };
 
   return (
@@ -227,7 +254,7 @@ const MovieCard = ({ movie, index = 0 }) => {
               {movie.genre_ids.slice(0, 2).map((genreId) => (
                 <Chip
                   key={genreId}
-                  label={`Genre ${genreId}`}
+                  label={getGenreName(genreId)}
                   size="small"
                   variant="outlined"
                   sx={{ fontSize: '0.7rem' }}

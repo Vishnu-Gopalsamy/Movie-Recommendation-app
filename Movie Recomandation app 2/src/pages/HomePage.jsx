@@ -17,7 +17,7 @@ import {
   PersonAdd as PersonAddIcon,
   Favorite as FavoriteIcon
 } from '@mui/icons-material';
-import MovieCard from '../components/movie/MovieCard';
+import MovieCard from '../components/movies/MovieCard';
 import FeaturedMovie from '../components/movie/FeaturedMovie';
 import MovieCarousel from '../components/movie/MovieCarousel';
 import useAuthStore from '../store/authStore';

@@ -19,6 +19,7 @@ import WatchlistPage from './pages/WatchlistPage';
 import SearchPage from './pages/SearchPage';
 import MovieDetails from './pages/MovieDetails';
 import Profile from './pages/Profile';
+import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AuthPage from './pages/AuthPage';
 
@@ -69,16 +70,6 @@ const App = () => {
   const handleAuthModalClose = () => {
     setAuthModalOpen(false);
   };
-
-  // Check authentication status when app loads
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { checkAuthStatus } = useAuthStore.getState();
-      await checkAuthStatus();
-    };
-    
-    checkAuth();
-  }, []);
 
   return (
     <ThemeProvider theme={theme}>
@@ -137,6 +128,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
                   </ProtectedRoute>
                 } 
               />
